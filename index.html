@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arun's Remote Job Hunter Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8e8f0;
+    --muted: #7a7a92;
+    --accent: #6e57ff;
+    --accent2: #a78bfa;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--accent2);
+    letter-spacing: 0.04em;
+  }
+  .logo span { color: var(--muted); }
+  .header-badge {
+    font-size: 12px;
+    color: var(--green);
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* MAIN LAYOUT */
+  .main { display: flex; min-height: calc(100vh - 61px); }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: sticky;
+    top: 61px;
+    height: calc(100vh - 61px);
+    overflow-y: auto;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0 8px;
+    margin-bottom: 4px;
+    margin-top: 16px;
+  }
+  .sidebar-label:first-child { margin-top: 0; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--muted);
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active {
+    color: var(--text);
+    background: var(--surface2);
+    border-color: var(--border2);
+  }
+  .nav-item .nav-icon { font-size: 16px; opacity: 0.8; }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: auto; display: none; }
+  .nav-item.active .nav-dot { display: block; }
+
+  /* PROFILE CARD IN SIDEBAR */
+  .profile-mini {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: auto;
+    margin-bottom: 0;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px; color: white;
+    margin-bottom: 8px;
+  }
+  .profile-mini .name { font-size: 13px; font-weight: 500; }
+  .profile-mini .role { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* CONTENT AREA */
+  .content { flex: 1; padding: 32px; max-width: 820px; overflow-y: auto; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* API KEY BANNER */
+  .api-banner {
+    background: rgba(110,87,255,0.08);
+    border: 1px solid rgba(110,87,255,0.25);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .api-banner-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .api-banner-text { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+  .api-banner-text strong { color: var(--text); }
+  .api-key-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .api-key-row input {
+    flex: 1;
+    min-width: 180px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+  }
+  .api-key-row input:focus { border-color: var(--accent); }
+  .api-key-row select {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+  .btn-sm {
+    padding: 8px 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .btn-sm:hover { opacity: 0.85; }
+  .btn-sm.secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-sm:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* PAGE TITLES */
+  .page-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .page-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .card-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+  /* FORM ELEMENTS */
+  label {
+    display: block;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 6px;
+    margin-top: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  label:first-child { margin-top: 0; }
+  textarea, input[type="text"], input[type="email"], input[type="password"], select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.15s;
+  }
+  textarea:focus, input:focus, select:focus { border-color: var(--accent); }
+  select { cursor: pointer; }
+  select option { background: var(--surface); }
+  #provider-select:focus, #inline-provider:focus { outline: none; border-color: var(--accent); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 14px;
+    transition: all 0.15s;
+  }
+  .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn.outline {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+  }
+  .btn.outline:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+
+  /* RESULT BOX */
+  .result-wrap { margin-top: 16px; }
+  .result-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .result-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .result-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    max-height: 480px;
+    overflow-y: auto;
+  }
+  .result-box::-webkit-scrollbar { width: 4px; }
+  .result-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* SPINNER */
+  .spinner {
+    width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* JOB SITES GRID */
+  .sites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .site-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .site-card:hover { border-color: var(--accent); color: var(--text); background: var(--surface2); }
+  .site-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  /* STATUS TAGS */
+  .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    padding: 3px 9px; border-radius: 20px;
+  }
+  .tag-green { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+  .tag-amber { background: rgba(251,191,36,0.1); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+  .tag-purple { background: rgba(110,87,255,0.12); color: var(--accent2); border: 1px solid rgba(110,87,255,0.25); }
+
+  /* COPY BTN */
+  .copy-btn {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    padding: 4px 11px;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--border2); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* SAVED NOTICE */
+  .saved-notice {
+    font-size: 12px; color: var(--green);
+    font-family: 'DM Mono', monospace;
+    margin-top: 8px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .saved-notice.show { opacity: 1; }
+
+  /* ===================== JOBS FEED STYLES ===================== */
+  .jobs-filter-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .jobs-filter-row input {
+    flex: 1;
+    min-width: 220px;
+    margin-top: 0;
+  }
+  .jobs-filter-row .btn {
+    margin-top: 0;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .job-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    transition: border-color 0.15s;
+  }
+  .job-card:hover { border-color: var(--border2); }
+
+  .job-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .job-title {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 3px;
+    line-height: 1.4;
+  }
+  .job-meta {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+  .source-badge {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: rgba(110,87,255,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(110,87,255,0.25);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .job-tags-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin: 8px 0 10px;
+  }
+  .job-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 14px;
+  }
+  .job-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .job-score-area {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.6;
+  }
+  .score-high { color: var(--green); }
+  .score-mid  { color: var(--amber); }
+  .score-low  { color: var(--red); }
+
+  .jobs-status-bar {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .jobs-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* DOWNLOAD BTN */
+  .dl-btn {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    padding: 4px 11px;
+    border: 1px solid rgba(110,87,255,0.3);
+    border-radius: 6px;
+    background: rgba(110,87,255,0.08);
+    color: var(--accent2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .dl-btn:hover { background: rgba(110,87,255,0.18); color: var(--text); }
+
+  /* MOBILE */
+  @media (max-width: 680px) {
+    .sidebar { display: none; }
+    .content { padding: 20px 16px; }
+    .mobile-tabs {
+      display: flex; gap: 4px; overflow-x: auto;
+      margin-bottom: 20px; padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .mobile-tabs::-webkit-scrollbar { display: none; }
+    .mob-tab {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border2);
+      font-size: 13px; color: var(--muted);
+      cursor: pointer; background: none;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+    }
+    .mob-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+  }
+  @media (min-width: 681px) { .mobile-tabs { display: none; } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">arun<span>.</span>job<span>-</span>agent</div>
+  <div class="header-badge">● remote · worldwide</div>
+</header>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-label">Tools</div>
+    <button class="nav-item active" id="nav-search" onclick="switchTab('search', this)">
+      <span class="nav-icon">🔍</span> Job Search
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-item" id="nav-jobs" onclick="switchTab('jobs', this)">
+      <span class="nav-icon">📡</span> Jobs Feed
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-item" id="nav-resume" onclick="switchTab('resume', this)">
+      <span class="nav-icon">📄</span> Tailor Resume
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-item" id="nav-cover" onclick="switchTab('cover', this)">
+      <span class="nav-icon">✉️</span> Cover Letter
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-item" id="nav-fit" onclick="switchTab('fit', this)">
+      <span class="nav-icon">📊</span> Job Fit Check
+      <span class="nav-dot"></span>
+    </button>
+    <div class="sidebar-label">Settings</div>
+    <button class="nav-item" id="nav-profile" onclick="switchTab('profile', this)">
+      <span class="nav-icon">👤</span> My Profile
+      <span class="nav-dot"></span>
+    </button>
+    <button class="nav-item" id="nav-apikey" onclick="switchTab('apikey', this)">
+      <span class="nav-icon">🔑</span> API Key
+      <span class="nav-dot"></span>
+    </button>
+
+    <div class="profile-mini" style="margin-top: 24px;">
+      <div class="avatar">AK</div>
+      <div class="name">Arun Konda</div>
+      <div class="role">App Support Eng.</div>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- MOBILE TABS -->
+    <div class="mobile-tabs">
+      <button class="mob-tab active" onclick="switchTab('search', this)">🔍 Search</button>
+      <button class="mob-tab" onclick="switchTab('jobs', this)">📡 Jobs</button>
+      <button class="mob-tab" onclick="switchTab('resume', this)">📄 Resume</button>
+      <button class="mob-tab" onclick="switchTab('cover', this)">✉️ Cover</button>
+      <button class="mob-tab" onclick="switchTab('fit', this)">📊 Fit</button>
+      <button class="mob-tab" onclick="switchTab('profile', this)">👤 Profile</button>
+      <button class="mob-tab" onclick="switchTab('apikey', this)">🔑 Key</button>
+    </div>
+
+    <!-- API KEY WARNING -->
+    <div id="api-warning" class="api-banner" style="display:none">
+      <div class="api-banner-icon">⚠️</div>
+      <div class="api-banner-text">
+        <strong>API key required.</strong> To use the AI features, add your <span id="inline-warning-text">free Groq API key (Llama 3.3, super fast)</span>.
+        Get one free at <a id="inline-warning-link" href="https://console.groq.com/keys" target="_blank" style="color:var(--accent2)">console.groq.com</a> — <span id="inline-warning-note">truly free, no credit card, blazing fast inference</span>.
+        <div class="api-key-row">
+          <select id="inline-provider" onchange="changeProvider(this.value)">
+            <option value="groq">Groq Llama (free, fastest)</option>
+            <option value="gemini">Google Gemini (free)</option>
+            <option value="anthropic">Anthropic Claude</option>
+          </select>
+          <input type="password" id="inline-key" placeholder="gsk_..." />
+          <button class="btn-sm" onclick="saveKeyInline()">Save</button>
+          <button class="btn-sm secondary" onclick="switchTab('apikey', document.getElementById('nav-apikey'))">Setup guide</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SEARCH PANEL ===================== -->
+    <div id="panel-search" class="panel active">
+      <div class="page-title">Job Search Strategy</div>
+      <div class="page-sub">Best remote job boards + AI-powered personalized strategy</div>
+
+      <div class="card">
+        <div class="card-title">Top remote job boards</div>
+        <div class="card-sub">Filtered for worldwide remote technical support roles</div>
+        <div class="sites-grid">
+          <a class="site-card" href="https://remoteok.com/remote-tech-support-jobs" target="_blank"><span class="site-dot"></span>Remote OK</a>
+          <a class="site-card" href="https://weworkremotely.com/remote-jobs/search?term=application+support" target="_blank"><span class="site-dot"></span>We Work Remotely</a>
+          <a class="site-card" href="https://himalayas.app/jobs/technical-support" target="_blank"><span class="site-dot"></span>Himalayas</a>
+          <a class="site-card" href="https://www.linkedin.com/jobs/search/?keywords=application+support+engineer&f_WT=2" target="_blank"><span class="site-dot"></span>LinkedIn Remote</a>
+          <a class="site-card" href="https://www.indeed.com/jobs?q=application+support+engineer+remote&remotejob=032b3046-06a3-4876-8dfd-474eb5e7ed11" target="_blank"><span class="site-dot"></span>Indeed Remote</a>
+          <a class="site-card" href="https://remotive.com/remote-jobs/customer-support" target="_blank"><span class="site-dot"></span>Remotive</a>
+          <a class="site-card" href="https://jobspresso.co" target="_blank"><span class="site-dot"></span>Jobspresso</a>
+          <a class="site-card" href="https://workatastartup.com" target="_blank"><span class="site-dot"></span>Work at a Startup</a>
+          <a class="site-card" href="https://www.glassdoor.com/Job/remote-application-support-engineer-jobs-SRCH_KO0,35.htm" target="_blank"><span class="site-dot"></span>Glassdoor Remote</a>
+          <a class="site-card" href="https://angel.co/jobs#remote=true&role=operations" target="_blank"><span class="site-dot"></span>Wellfound</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">AI strategy advisor</div>
+        <div class="card-sub">Personalized search plan based on your background</div>
+        <label>Your experience &amp; stack</label>
+        <textarea id="search-exp" rows="3">Application Support Engineer at MSD (Merck Sharp & Dohme). L2/L3 support for .NET enterprise apps, ITIL incident management, ServiceNow, Linux & Windows Server, SQL troubleshooting, Python & Bash scripting, root cause analysis, system integrations, API support. Czech Republic, fully remote preferred.</textarea>
+        <label>Preferences (salary, timezone, company type)</label>
+        <textarea id="search-prefs" rows="2">Fully remote, any country. English-speaking teams. Open to SaaS, pharma/biotech, fintech, or any tech company. Flexible on timezone.</textarea>
+        <button class="btn" onclick="runSearch()" id="search-btn">✦ Get my personalized strategy</button>
+        <div class="result-wrap" id="search-result-wrap" style="display:none">
+          <div class="result-header">
+            <span class="result-label">Strategy</span>
+            <button class="copy-btn" onclick="copyResult('search-result')">copy</button>
+          </div>
+          <div class="result-box" id="search-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== JOBS FEED PANEL ===================== -->
+    <div id="panel-jobs" class="panel">
+      <div class="page-title">📡 Jobs Feed</div>
+      <div class="page-sub">Live jobs from Remotive, Arbeitnow &amp; Jobicy — score fit with AI, then auto-fill &amp; apply</div>
+
+      <div class="card">
+        <div class="card-title">Keyword filter</div>
+        <div class="card-sub">Comma-separated terms — all three job feeds are searched simultaneously</div>
+        <div class="jobs-filter-row">
+          <input type="text" id="jobs-keywords" value="application support, support engineer, .NET">
+          <button class="btn" id="jobs-load-btn" onclick="loadJobs()">🔄 Fetch Live Jobs</button>
+        </div>
+      </div>
+
+      <div id="jobs-status-bar" class="jobs-status-bar" style="display:none"></div>
+      <div id="jobs-list"></div>
+    </div>
+
+    <!-- ===================== RESUME PANEL ===================== -->
+    <div id="panel-resume" class="panel">
+      <div class="page-title">Tailor Resume</div>
+      <div class="page-sub">Rewrite your resume to match any job description — ATS-optimized</div>
+      <div class="card">
+        <label>Your current resume</label>
+        <textarea id="resume-text" rows="10">ARUN KONDA
+Email: arunkonda9912@gmail.com | Phone: +420 605 001 794
+Location: Czech Republic | Open to Remote/Hybrid
+LinkedIn: Ing. Arun Konda
+
+PROFESSIONAL SUMMARY
+Application Support Engineer with hands-on experience in .NET application support, IT operations, and system integration within enterprise environments. Strong expertise in incident management, root cause analysis, and maintaining high-availability systems. Proficient in Linux, SQL, and automation using Python. Experienced in working with ITIL processes and cross-functional teams to deliver reliable application support and continuous service improvements.
+
+CORE SKILLS
+- .NET Application Support (Monitoring, Troubleshooting)
+- Incident & Problem Management (ITIL)
+- ServiceNow (Incident, Change, Problem)
+- Linux & Windows Server Administration
+- SQL & Database Troubleshooting
+- Root Cause Analysis & Debugging
+- Application Monitoring & Performance Tuning
+- Python & Bash Scripting (Automation)
+- System Integration & API Support
+- Production Support (L2/L3)
+- Log Analysis & Issue Resolution
+- Agile & DevOps Collaboration
+
+PROFESSIONAL EXPERIENCE
+Application Support Engineer | MSD (Merck Sharp & Dohme)
+- Provided L2/L3 support for enterprise applications, including .NET-based systems, ensuring high availability and performance
+- Managed incidents, service requests, and problem tickets using ServiceNow in alignment with ITIL standards
+- Performed in-depth troubleshooting and root cause analysis across application, database, and infrastructure layers
+- Monitored application health, logs, and system performance to proactively identify and resolve issues
+- Collaborated with development teams to resolve defects, deploy fixes, and improve application stability
+- Supported system integrations and backend services across distributed enterprise environments
+- Automated operational tasks using Python scripts, reducing manual effort and improving efficiency
+- Contributed to continuous improvement initiatives, enhancing system reliability and support processes
+
+TECHNICAL EXPERTISE
+Operating Systems: Linux, Windows Server
+Tools: ServiceNow, Monitoring Tools, Ticketing Systems
+Programming: Python, Bash
+Databases: SQL (Querying, Troubleshooting)</textarea>
+        <label>Job description to target</label>
+        <textarea id="resume-jd" rows="6" placeholder="Paste the full job description here — or use 'Tailor &amp; Apply' from the Jobs Feed to auto-fill this..."></textarea>
+        <button class="btn" onclick="runResume()" id="resume-btn">✦ Tailor my resume</button>
+        <div class="result-wrap" id="resume-result-wrap" style="display:none">
+          <div class="result-header">
+            <span class="result-label">Tailored resume</span>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button class="copy-btn" onclick="copyResult('resume-result')">copy</button>
+              <button class="dl-btn" onclick="downloadResume()">⬇ download</button>
+            </div>
+          </div>
+          <div class="result-box" id="resume-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== COVER LETTER PANEL ===================== -->
+    <div id="panel-cover" class="panel">
+      <div class="page-title">Cover Letter Generator</div>
+      <div class="page-sub">Tailored cover letter for each job application in seconds</div>
+      <div class="card">
+        <label>Your background</label>
+        <textarea id="cover-bg" rows="4">Application Support Engineer with enterprise experience at MSD (Merck Sharp & Dohme). Skilled in L2/L3 technical support, ITIL incident management, ServiceNow, Linux & Windows Server, SQL, Python automation, root cause analysis, and enterprise system integrations. Based in Czech Republic (CET timezone), fluent in English, seeking fully remote roles globally.</textarea>
+        <label>Job description</label>
+        <textarea id="cover-jd" rows="5" placeholder="Paste the job description here — or use 'Tailor &amp; Apply' from the Jobs Feed to auto-fill this..."></textarea>
+        <label>Tone</label>
+        <select id="cover-tone">
+          <option value="professional">Professional</option>
+          <option value="friendly and professional">Friendly &amp; professional</option>
+          <option value="enthusiastic">Enthusiastic</option>
+          <option value="concise and direct">Concise &amp; direct</option>
+        </select>
+        <button class="btn" onclick="runCover()" id="cover-btn">✦ Write cover letter</button>
+        <div class="result-wrap" id="cover-result-wrap" style="display:none">
+          <div class="result-header">
+            <span class="result-label">Cover letter</span>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button class="copy-btn" onclick="copyResult('cover-result')">copy</button>
+              <button class="dl-btn" onclick="downloadCover()">⬇ download</button>
+            </div>
+          </div>
+          <div class="result-box" id="cover-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== FIT CHECK PANEL ===================== -->
+    <div id="panel-fit" class="panel">
+      <div class="page-title">Job Fit Analyzer</div>
+      <div class="page-sub">Score any job against your profile before applying</div>
+      <div class="card">
+        <label>Your background</label>
+        <textarea id="fit-bg" rows="3">Application Support Engineer — L2/L3 .NET app support, ITIL, ServiceNow, Linux & Windows Server, SQL, Python & Bash, root cause analysis, system integration, API support. MSD pharma enterprise. Czech Republic, remote-ready, English fluent.</textarea>
+        <label>Job description to analyze</label>
+        <textarea id="fit-jd" rows="7" placeholder="Paste the full job description here..."></textarea>
+        <button class="btn" onclick="runFit()" id="fit-btn">✦ Analyze my fit</button>
+        <div class="result-wrap" id="fit-result-wrap" style="display:none">
+          <div class="result-header">
+            <span class="result-label">Fit analysis</span>
+            <button class="copy-btn" onclick="copyResult('fit-result')">copy</button>
+          </div>
+          <div class="result-box" id="fit-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== PROFILE PANEL ===================== -->
+    <div id="panel-profile" class="panel">
+      <div class="page-title">My Profile</div>
+      <div class="page-sub">Your details — pre-filled from your uploaded resumes</div>
+      <div class="card">
+        <label>Full name</label>
+        <input type="text" id="p-name" value="Arun Konda">
+        <label>Email</label>
+        <input type="email" id="p-email" value="arunkonda9912@gmail.com">
+        <label>Phone</label>
+        <input type="text" id="p-phone" value="+420 605 001 794">
+        <label>Location</label>
+        <input type="text" id="p-location" value="Czech Republic — open to fully remote, any country worldwide">
+        <label>Current / last role</label>
+        <input type="text" id="p-role" value="Application Support Engineer at MSD (Merck Sharp & Dohme)">
+        <label>Key skills</label>
+        <textarea id="p-skills" rows="3">.NET Application Support, ServiceNow, ITIL, Linux, Windows Server, SQL, Python, Bash, Root Cause Analysis, Incident & Problem Management, System Integration, API Support, Log Analysis, Application Monitoring, L2/L3 Support</textarea>
+        <label>Languages</label>
+        <input type="text" id="p-langs" value="English (fluent), Czech (resident)">
+        <label>Target salary / rate</label>
+        <input type="text" id="p-salary" placeholder="e.g. $40k–60k/yr or $25/hr">
+        <label>LinkedIn URL</label>
+        <input type="text" id="p-linkedin" value="https://linkedin.com/in/arun-konda">
+        <button class="btn" onclick="saveProfile()">Save profile</button>
+        <div class="saved-notice" id="saved-notice">✓ Profile saved</div>
+      </div>
+    </div>
+
+    <!-- ===================== API KEY PANEL ===================== -->
+    <div id="panel-apikey" class="panel">
+      <div class="page-title">API Key Setup</div>
+      <div class="page-sub">One-time setup to power the AI features — stored only in your browser</div>
+
+      <div class="card">
+        <div class="card-title">Choose your provider</div>
+        <div class="card-sub">Groq is the fastest free option (Llama 3.3 70B). Gemini is free with daily limits. Anthropic gives $5 trial credit.</div>
+        <label>AI provider</label>
+        <select id="provider-select" onchange="changeProvider(this.value)">
+          <option value="groq">Groq Llama (free, fastest)</option>
+          <option value="gemini">Google Gemini (free)</option>
+          <option value="anthropic">Anthropic Claude</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 1 — Get a free API key</div>
+        <div class="card-sub" id="step1-sub"></div>
+        <ol id="step1-instructions" style="color:var(--muted); font-size:14px; padding-left:20px; line-height:2;"></ol>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 2 — Paste your key here</div>
+        <div class="card-sub" id="step2-sub"></div>
+        <label id="key-label">API key</label>
+        <input type="password" id="api-key-input" placeholder="" autocomplete="off">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+          <button class="btn" onclick="saveApiKey()">Save key</button>
+          <button class="btn outline" onclick="clearApiKey()">Clear saved key</button>
+          <button class="btn outline" onclick="testApiKey()">Test connection</button>
+        </div>
+        <div class="saved-notice" id="key-notice">✓ Key saved — all AI features are ready</div>
+        <div id="test-result" style="margin-top:12px; font-size:13px; font-family:'DM Mono',monospace; display:none;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 3 — Deploy to get your free URL</div>
+        <div class="card-sub">Choose any free host — your URL will work from any device, anywhere</div>
+        <div class="sites-grid" style="margin-top:0">
+          <a class="site-card" href="https://vercel.com/new" target="_blank"><span class="site-dot"></span>Vercel (easiest)</a>
+          <a class="site-card" href="https://app.netlify.com/drop" target="_blank"><span class="site-dot"></span>Netlify Drop</a>
+          <a class="site-card" href="https://pages.github.com" target="_blank"><span class="site-dot"></span>GitHub Pages</a>
+          <a class="site-card" href="https://tiiny.host" target="_blank"><span class="site-dot"></span>Tiiny.host</a>
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-top:14px; line-height:1.7;">
+          <strong style="color:var(--text)">Fastest option (30 seconds):</strong> Go to <a href="https://app.netlify.com/drop" target="_blank" style="color:var(--accent2)">Netlify Drop</a>, drag and drop this HTML file, and you get a live URL instantly — no account needed.
+        </p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ============================================================
+// PROVIDER CONFIG (single source of truth)
+// ============================================================
+const PROVIDERS = {
+  groq: {
+    name: 'Groq Llama',
+    keyPrefix: 'gsk_',
+    placeholder: 'gsk_...',
+    storageKey: 'groq_api_key',
+    signupUrl: 'https://console.groq.com/keys',
+    signupLabel: 'console.groq.com',
+    bannerHint: 'free Groq API key (Llama 3.3, super fast)',
+    bannerNote: 'truly free, no credit card, blazing fast inference',
+    step1Sub: 'Groq runs Llama 3.3 70B on custom hardware — fastest free LLM API on the planet, no credit card required',
+    step2Sub: "Stored only in your browser's localStorage — never sent anywhere except Groq",
+    step1Items: [
+      '<li>Go to <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent2)">console.groq.com/keys</a></li>',
+      '<li>Sign up free with email or Google (no credit card needed)</li>',
+      '<li>Click <strong style="color:var(--text)">Create API Key</strong> → give it any name</li>',
+      '<li>Copy the key (starts with <code style="background:var(--surface2); padding:2px 6px; border-radius:4px; font-family:\'DM Mono\',monospace; font-size:12px;">gsk_</code>)</li>',
+      '<li>Paste it below — done!</li>'
+    ]
+  },
+  gemini: {
+    name: 'Google Gemini',
+    keyPrefix: 'AIza',
+    placeholder: 'AIzaSy...',
+    storageKey: 'gemini_api_key',
+    signupUrl: 'https://aistudio.google.com/app/apikey',
+    signupLabel: 'aistudio.google.com',
+    bannerHint: 'free Google Gemini API key',
+    bannerNote: 'truly free, no credit card required',
+    step1Sub: 'Google AI Studio is free — generous daily limits, no credit card required',
+    step2Sub: "Stored only in your browser's localStorage — never sent anywhere except Google",
+    step1Items: [
+      '<li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent2)">aistudio.google.com/app/apikey</a></li>',
+      '<li>Sign in with your Google account (no credit card needed)</li>',
+      '<li>Click <strong style="color:var(--text)">Create API key</strong> → choose any project</li>',
+      '<li>Copy the key (starts with <code style="background:var(--surface2); padding:2px 6px; border-radius:4px; font-family:\'DM Mono\',monospace; font-size:12px;">AIza</code>)</li>',
+      '<li>Paste it below</li>'
+    ]
+  },
+  anthropic: {
+    name: 'Anthropic Claude',
+    keyPrefix: 'sk-ant',
+    placeholder: 'sk-ant-api03-...',
+    storageKey: 'anthropic_api_key',
+    signupUrl: 'https://console.anthropic.com',
+    signupLabel: 'console.anthropic.com',
+    bannerHint: 'free Anthropic API key',
+    bannerNote: '$5 free credits, no credit card needed for trial',
+    step1Sub: 'Anthropic gives $5 free credits — enough for hundreds of job applications',
+    step2Sub: "Stored only in your browser's localStorage — never sent anywhere except Anthropic",
+    step1Items: [
+      '<li>Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent2)">console.anthropic.com</a></li>',
+      '<li>Sign up free (no credit card needed for free tier)</li>',
+      '<li>Go to <strong style="color:var(--text)">API Keys</strong> → click <strong style="color:var(--text)">Create Key</strong></li>',
+      '<li>Copy the key (starts with <code style="background:var(--surface2); padding:2px 6px; border-radius:4px; font-family:\'DM Mono\',monospace; font-size:12px;">sk-ant-</code>)</li>',
+      '<li>Paste it below</li>'
+    ]
+  }
+};
+
+const DEFAULT_SYSTEM = 'You are a specialized remote job hunting assistant for Arun Konda, an Application Support Engineer based in Czech Republic. Be practical, specific, and actionable. Use plain text — no markdown symbols like ** or ##.';
+
+// ============================================================
+// PROVIDER STATE & UI SYNC
+// ============================================================
+function getProvider() {
+  return localStorage.getItem('ai_provider') || 'gemini';
+}
+function setProvider(p) {
+  if (PROVIDERS[p]) localStorage.setItem('ai_provider', p);
+}
+function activeCfg() {
+  return PROVIDERS[getProvider()];
+}
+
+function changeProvider(p) {
+  if (!PROVIDERS[p]) return;
+  setProvider(p);
+  const cfg = PROVIDERS[p];
+
+  const sel = document.getElementById('provider-select');
+  const inlineSel = document.getElementById('inline-provider');
+  if (sel) sel.value = p;
+  if (inlineSel) inlineSel.value = p;
+
+  const s1Sub = document.getElementById('step1-sub');
+  const s1Items = document.getElementById('step1-instructions');
+  if (s1Sub) s1Sub.textContent = cfg.step1Sub;
+  if (s1Items) s1Items.innerHTML = cfg.step1Items.join('');
+
+  const s2Sub = document.getElementById('step2-sub');
+  const keyLabel = document.getElementById('key-label');
+  const keyInput = document.getElementById('api-key-input');
+  if (s2Sub) s2Sub.textContent = cfg.step2Sub;
+  if (keyLabel) keyLabel.textContent = cfg.name + ' API key';
+  if (keyInput) {
+    keyInput.placeholder = cfg.placeholder;
+    keyInput.value = localStorage.getItem(cfg.storageKey) || '';
+  }
+
+  const inlineKey = document.getElementById('inline-key');
+  const wText = document.getElementById('inline-warning-text');
+  const wLink = document.getElementById('inline-warning-link');
+  const wNote = document.getElementById('inline-warning-note');
+  if (inlineKey) inlineKey.placeholder = cfg.placeholder;
+  if (wText) wText.textContent = cfg.bannerHint;
+  if (wLink) { wLink.href = cfg.signupUrl; wLink.textContent = cfg.signupLabel; }
+  if (wNote) wNote.textContent = cfg.bannerNote;
+
+  const banner = document.getElementById('api-warning');
+  if (banner) banner.style.display = localStorage.getItem(cfg.storageKey) ? 'none' : 'flex';
+
+  const testEl = document.getElementById('test-result');
+  if (testEl) { testEl.style.display = 'none'; testEl.textContent = ''; }
+}
+
+// ============================================================
+// KEY HELPERS
+// ============================================================
+function getApiKey() {
+  const cfg = activeCfg();
+  const fromInput = document.getElementById('api-key-input')?.value?.trim();
+  if (fromInput) return fromInput;
+  return localStorage.getItem(cfg.storageKey) || '';
+}
+
+function saveApiKey() {
+  const cfg = activeCfg();
+  const k = document.getElementById('api-key-input').value.trim();
+  if (!k) { showNotice('key-notice', '✗ Please paste a key first', '#f87171'); return; }
+  if (!k.startsWith(cfg.keyPrefix)) {
+    showNotice('key-notice', '⚠ Key normally starts with ' + cfg.keyPrefix + ' — saved anyway', '#fbbf24');
+  } else {
+    showNotice('key-notice', '✓ Key saved — all AI features are ready');
+  }
+  localStorage.setItem(cfg.storageKey, k);
+  document.getElementById('api-warning').style.display = 'none';
+}
+
+function saveKeyInline() {
+  const cfg = activeCfg();
+  const k = document.getElementById('inline-key').value.trim();
+  if (!k) return;
+  localStorage.setItem(cfg.storageKey, k);
+  const inp = document.getElementById('api-key-input');
+  if (inp) inp.value = k;
+  document.getElementById('api-warning').style.display = 'none';
+}
+
+function clearApiKey() {
+  const cfg = activeCfg();
+  localStorage.removeItem(cfg.storageKey);
+  document.getElementById('api-key-input').value = '';
+  showNotice('key-notice', '✓ Key cleared', '#fbbf24');
+  document.getElementById('api-warning').style.display = 'flex';
+}
+
+async function testApiKey() {
+  const key = getApiKey();
+  if (!key) { alert('No API key set.'); return; }
+  const provider = getProvider();
+  const el = document.getElementById('test-result');
+  el.style.display = 'block'; el.style.color = 'var(--muted)'; el.textContent = 'Testing ' + activeCfg().name + '...';
+
+  try {
+    if (provider === 'groq') {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          max_tokens: 30,
+          messages: [{ role: 'user', content: 'Say exactly: API key works!' }]
+        })
+      });
+      const d = await r.json();
+      const txt = d.choices?.[0]?.message?.content || '';
+      if (txt) { el.style.color = 'var(--green)'; el.textContent = '✓ ' + txt.trim(); }
+      else { el.style.color = 'var(--red)'; el.textContent = '✗ Error: ' + (d.error?.message || JSON.stringify(d)); }
+    } else if (provider === 'gemini') {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(key), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: 'Say exactly: API key works!' }] }],
+          generationConfig: { maxOutputTokens: 30, temperature: 0 }
+        })
+      });
+      const d = await r.json();
+      const txt = d.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+      if (txt) { el.style.color = 'var(--green)'; el.textContent = '✓ ' + txt.trim(); }
+      else { el.style.color = 'var(--red)'; el.textContent = '✗ Error: ' + (d.error?.message || JSON.stringify(d)); }
+    } else {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 30, messages: [{ role: 'user', content: 'Say: API key works!' }] })
+      });
+      const d = await r.json();
+      if (d.content?.[0]?.text) { el.style.color = 'var(--green)'; el.textContent = '✓ ' + d.content[0].text; }
+      else { el.style.color = 'var(--red)'; el.textContent = '✗ Error: ' + (d.error?.message || JSON.stringify(d)); }
+    }
+  } catch (e) { el.style.color = 'var(--red)'; el.textContent = '✗ ' + e.message; }
+}
+
+function showNotice(id, msg, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--green)';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+let jobsAutoLoaded = false;
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.mob-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  if (name === 'jobs' && !jobsAutoLoaded) {
+    jobsAutoLoaded = true;
+    loadJobs();
+  }
+}
+
+function copyResult(id) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ copied';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+}
+
+function saveProfile() {
+  showNotice('saved-notice', '✓ Profile saved');
+}
+
+// ============================================================
+// API CALLS — provider-aware
+// ============================================================
+async function callAnthropic(prompt, systemMsg) {
+  const cfg = PROVIDERS.anthropic;
+  const key = document.getElementById('api-key-input')?.value?.trim() || localStorage.getItem(cfg.storageKey) || '';
+  if (!key) {
+    document.getElementById('api-warning').style.display = 'flex';
+    switchTab('apikey', document.getElementById('nav-apikey'));
+    throw new Error('No Anthropic API key. Please add your key first.');
+  }
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1200,
+      system: systemMsg || DEFAULT_SYSTEM,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content?.map(b => b.text || '').join('\n') || 'No response.';
+}
+
+async function callGemini(prompt, systemMsg) {
+  const cfg = PROVIDERS.gemini;
+  const key = localStorage.getItem(cfg.storageKey) || document.getElementById('api-key-input')?.value?.trim() || '';
+  if (!key) {
+    document.getElementById('api-warning').style.display = 'flex';
+    switchTab('apikey', document.getElementById('nav-apikey'));
+    throw new Error('No Gemini API key. Please add your key first.');
+  }
+  const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(key), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemMsg || DEFAULT_SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 1200, temperature: 0.7 }
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('\n') || 'No response.';
+}
+
+async function callGroq(prompt, systemMsg) {
+  const cfg = PROVIDERS.groq;
+  const key = localStorage.getItem(cfg.storageKey) || document.getElementById('api-key-input')?.value?.trim() || '';
+  if (!key) {
+    document.getElementById('api-warning').style.display = 'flex';
+    switchTab('apikey', document.getElementById('nav-apikey'));
+    throw new Error('No Groq API key. Please add your key first.');
+  }
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 1200,
+      temperature: 0.7,
+      messages: [
+        { role: 'system', content: systemMsg || DEFAULT_SYSTEM },
+        { role: 'user', content: prompt }
+      ]
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  return data.choices?.[0]?.message?.content || 'No response.';
+}
+
+async function callAI(prompt, systemMsg) {
+  const p = getProvider();
+  if (p === 'groq') return callGroq(prompt, systemMsg);
+  if (p === 'anthropic') return callAnthropic(prompt, systemMsg);
+  return callGemini(prompt, systemMsg);
+}
+
+function callClaude(prompt, systemMsg) { return callAI(prompt, systemMsg); }
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (loading) { btn._orig = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span> Working...'; btn.disabled = true; }
+  else { btn.innerHTML = btn._orig; btn.disabled = false; }
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+async function runSearch() {
+  const exp = document.getElementById('search-exp').value.trim();
+  const prefs = document.getElementById('search-prefs').value.trim();
+  setLoading('search-btn', true);
+  try {
+    const result = await callAI(`I am Arun Konda, Application Support Engineer in Czech Republic, seeking fully remote technical support roles worldwide.
+
+My experience: ${exp}
+My preferences: ${prefs}
+
+Give me:
+1. Top 5 personalized job search strategies for my exact profile and background
+2. Best job title keywords to search (ranked by effectiveness for my background)
+3. Types of companies that frequently hire remote L2/L3 support engineers — give specific examples
+4. How to position being in Czech Republic as an advantage (EU timezone, central Europe)
+5. Three concrete actions I can take TODAY to get more interviews
+
+Be very specific to my background at MSD with .NET, ServiceNow, and ITIL.`);
+    document.getElementById('search-result-wrap').style.display = 'block';
+    document.getElementById('search-result').textContent = result;
+  } catch(e) { alert(e.message); }
+  setLoading('search-btn', false);
+}
+
+// ============================================================
+// RESUME
+// ============================================================
+async function runResume() {
+  const resume = document.getElementById('resume-text').value.trim();
+  const jd = document.getElementById('resume-jd').value.trim();
+  if (!jd) { alert('Please paste the job description.'); return; }
+  setLoading('resume-btn', true);
+  try {
+    const result = await callAI(`Rewrite Arun Konda's resume to perfectly match this job description.
+
+Instructions:
+- Mirror keywords and phrases from the job description throughout
+- Reorder and reframe bullet points to highlight most relevant experience first
+- Add measurable/specific details where possible
+- Keep it ATS-friendly, no tables, clean plain text
+- Emphasize remote work capability and reliability
+- Keep all factual information accurate — only reframe, do not invent
+
+ARUN'S RESUME:
+${resume}
+
+JOB DESCRIPTION TO MATCH:
+${jd}
+
+Output the complete tailored resume in plain text, ready to copy-paste.`);
+    document.getElementById('resume-result-wrap').style.display = 'block';
+    document.getElementById('resume-result').textContent = result;
+  } catch(e) { alert(e.message); }
+  setLoading('resume-btn', false);
+}
+
+// ============================================================
+// COVER LETTER
+// ============================================================
+async function runCover() {
+  const bg = document.getElementById('cover-bg').value.trim();
+  const jd = document.getElementById('cover-jd').value.trim();
+  const tone = document.getElementById('cover-tone').value;
+  if (!jd) { alert('Please paste the job description.'); return; }
+  setLoading('cover-btn', true);
+  try {
+    const result = await callAI(`Write a ${tone} cover letter for Arun Konda applying to this remote technical support role.
+
+ARUN'S BACKGROUND:
+${bg}
+
+JOB DESCRIPTION:
+${jd}
+
+Rules:
+- Tone: ${tone}
+- Maximum 4 paragraphs
+- Do NOT start with "I am writing to apply" or "I am excited to apply"
+- Reference 2-3 specific skills/experiences that match this exact role
+- Mention EU/CET timezone availability as a natural benefit for global remote teams
+- End with confident, specific call to action
+- Plain text format, ready to paste into an application`);
+    document.getElementById('cover-result-wrap').style.display = 'block';
+    document.getElementById('cover-result').textContent = result;
+  } catch(e) { alert(e.message); }
+  setLoading('cover-btn', false);
+}
+
+// ============================================================
+// FIT CHECK
+// ============================================================
+async function runFit() {
+  const bg = document.getElementById('fit-bg').value.trim();
+  const jd = document.getElementById('fit-jd').value.trim();
+  if (!jd) { alert('Please paste the job description.'); return; }
+  setLoading('fit-btn', true);
+  try {
+    const result = await callAI(`Analyze how well Arun Konda fits this job. Be honest and specific.
+
+ARUN'S PROFILE:
+${bg}
+
+JOB DESCRIPTION:
+${jd}
+
+Provide this exact structure:
+
+OVERALL FIT SCORE: X/10
+
+STRONG MATCHES:
+(list skills and experience Arun clearly has that match this job)
+
+GAPS TO ADDRESS:
+(list requirements Arun is missing or weak on — be direct and honest)
+
+HOW TO BRIDGE THE GAPS:
+(specific things to learn or mention before applying)
+
+VERDICT: Should Arun apply? Yes / Yes with caveats / No
+(give a 2-sentence reason)
+
+TOP 3 INTERVIEW QUESTIONS for this specific role with Arun's ideal answers based on his MSD experience`);
+    document.getElementById('fit-result-wrap').style.display = 'block';
+    document.getElementById('fit-result').textContent = result;
+  } catch(e) { alert(e.message); }
+  setLoading('fit-btn', false);
+}
+
+// ============================================================
+// JOBS FEED
+// ============================================================
+let jobsData = {};
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d)) return '';
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days < 0) return 'just now';
+    if (days === 0) return 'today';
+    if (days === 1) return '1 day ago';
+    if (days < 30) return days + ' days ago';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch { return ''; }
+}
+
+async function loadJobs() {
+  const keywords = document.getElementById('jobs-keywords').value.trim() || 'application support, support engineer, .NET';
+  const btn = document.getElementById('jobs-load-btn');
+  const statusBar = document.getElementById('jobs-status-bar');
+  const list = document.getElementById('jobs-list');
+
+  btn._orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Fetching...';
+  btn.disabled = true;
+
+  statusBar.style.display = 'block';
+  statusBar.textContent = 'Fetching live jobs from Remotive, Arbeitnow & Jobicy...';
+  list.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/jobs-feed?keywords=' + encodeURIComponent(keywords));
+    if (!res.ok) throw new Error('Server returned ' + res.status);
+    const data = await res.json();
+
+    jobsData = {};
+    (data.jobs || []).forEach(j => { jobsData[j.id] = j; });
+
+    const sourceInfo = Object.entries(data.sources || {})
+      .map(([k, v]) => k + ': ' + (typeof v === 'number' ? v + ' jobs' : v))
+      .join('  ·  ');
+
+    statusBar.textContent = '✓ ' + (data.total || 0) + ' jobs loaded  ·  ' + sourceInfo;
+
+    if (!data.jobs || data.jobs.length === 0) {
+      list.innerHTML = '<div class="jobs-empty">No jobs found for these keywords. Try different search terms.</div>';
+    } else {
+      renderJobs(data.jobs);
+    }
+  } catch (e) {
+    statusBar.style.color = 'var(--red)';
+    statusBar.textContent = '✗ Failed to fetch jobs: ' + e.message;
+  }
+
+  btn.innerHTML = btn._orig;
+  btn.disabled = false;
+}
+
+function renderJobs(jobs) {
+  const list = document.getElementById('jobs-list');
+  list.innerHTML = jobs.map(j => {
+    const tags = (j.tags || []).slice(0, 5).map(t =>
+      '<span class="tag tag-purple">' + escHtml(String(t)) + '</span>'
+    ).join('');
+    const desc = j.description
+      ? escHtml(j.description.slice(0, 200)) + (j.description.length > 200 ? '…' : '')
+      : '<em style="color:var(--muted)">No description available.</em>';
+    const posted = j.postedAt ? '· ' + timeAgo(j.postedAt) : '';
+
+    return [
+      '<div class="job-card" id="jc-' + j.id + '">',
+      '  <div class="job-top">',
+      '    <div>',
+      '      <div class="job-title">' + escHtml(j.title) + '</div>',
+      '      <div class="job-meta">' + escHtml(j.company) + ' · ' + escHtml(j.location) + ' ' + posted + '</div>',
+      '    </div>',
+      '    <span class="source-badge">' + escHtml(j.source) + '</span>',
+      '  </div>',
+      tags ? '  <div class="job-tags-row">' + tags + '</div>' : '',
+      '  <div class="job-desc">' + desc + '</div>',
+      '  <div class="job-btns">',
+      '    <button class="btn-sm" id="score-btn-' + j.id + '" onclick="scoreJob(\'' + j.id + '\', this)">✦ Score with AI</button>',
+      '    <button class="btn-sm secondary" onclick="tailorAndApply(\'' + j.id + '\')">📝 Tailor &amp; Apply</button>',
+      '  </div>',
+      '  <div class="job-score-area" id="jsa-' + j.id + '" style="display:none"></div>',
+      '</div>',
+    ].join('\n');
+  }).join('\n');
+}
+
+async function scoreJob(jobId, btn) {
+  const job = jobsData[jobId];
+  if (!job) return;
+
+  const scoreArea = document.getElementById('jsa-' + jobId);
+  const origHtml = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  scoreArea.style.display = 'block';
+  scoreArea.innerHTML = '<span style="color:var(--muted)">Scoring with AI…</span>';
+
+  try {
+    const result = await callAI(
+      'Score Arun Konda\'s fit for this job in ONE line.\n\n' +
+      'ARUN\'S PROFILE: Application Support Engineer (L2/L3), .NET enterprise apps, ITIL, ServiceNow, Linux, Windows Server, SQL, Python, Bash. MSD/Merck pharma. Czech Republic (CET), remote-only, English fluent.\n\n' +
+      'JOB: ' + job.title + ' at ' + job.company + '\n' +
+      'DESCRIPTION: ' + job.description.slice(0, 500) + '\n\n' +
+      'Reply in EXACTLY this format, nothing else:\n' +
+      'SCORE: XX% | One-sentence reason (max 15 words).',
+      'You are a concise job-fit scoring assistant. Reply only in the exact format requested, no other text.'
+    );
+
+    const match = result.match(/SCORE:\s*(\d+)%/i);
+    const pct = match ? parseInt(match[1]) : 0;
+    const cls = pct >= 75 ? 'score-high' : pct >= 50 ? 'score-mid' : 'score-low';
+    scoreArea.innerHTML = '<span class="' + cls + '">● ' + escHtml(result.trim()) + '</span>';
+    btn.innerHTML = '✓ Scored';
+  } catch (e) {
+    scoreArea.innerHTML = '<span style="color:var(--red)">✗ ' + escHtml(e.message) + '</span>';
+    btn.innerHTML = origHtml;
+    btn.disabled = false;
+  }
+}
+
+function tailorAndApply(jobId) {
+  const job = jobsData[jobId];
+  if (!job) return;
+
+  const fullDesc = job.title + ' at ' + job.company + '\n\n' + job.description;
+
+  const resumeJd = document.getElementById('resume-jd');
+  const coverJd  = document.getElementById('cover-jd');
+  const fitJd    = document.getElementById('fit-jd');
+
+  if (resumeJd) resumeJd.value = fullDesc;
+  if (coverJd)  coverJd.value  = fullDesc;
+  if (fitJd)    fitJd.value    = fullDesc;
+
+  switchTab('resume', document.getElementById('nav-resume'));
+
+  if (job.applyUrl) {
+    window.open(job.applyUrl, '_blank', 'noopener,noreferrer');
+  }
+}
+
+function downloadResume() {
+  const content = document.getElementById('resume-result').innerText || '';
+  if (!content.trim()) {
+    alert('No tailored resume yet. Click "Tailor my resume" first.');
+    return;
+  }
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'arun-konda-tailored-resume.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadCover() {
+  const content = document.getElementById('cover-result').innerText || '';
+  if (!content.trim()) {
+    alert('No cover letter yet. Click "Write cover letter" first.');
+    return;
+  }
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'arun-konda-cover-letter.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  let provider = localStorage.getItem('ai_provider');
+  if (!provider) {
+    if (localStorage.getItem('groq_api_key')) provider = 'groq';
+    else if (localStorage.getItem('gemini_api_key')) provider = 'gemini';
+    else if (localStorage.getItem('anthropic_api_key')) provider = 'anthropic';
+    else provider = 'groq';
+    localStorage.setItem('ai_provider', provider);
+  }
+  changeProvider(provider);
+});
+</script>
+</body>
+</html>
