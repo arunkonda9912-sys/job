@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Resume Builder Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#0f172a;
+  color:white;
+  margin:0;
+  padding:40px;
+}
+
+.container{
+  max-width:1000px;
+  margin:auto;
+}
+
+.card{
+  background:#111827;
+  border-radius:20px;
+  padding:30px;
+  margin-bottom:20px;
+}
+
+textarea{
+  width:100%;
+  min-height:180px;
+  background:#0b1220;
+  border:1px solid #374151;
+  color:white;
+  border-radius:12px;
+  padding:15px;
+  font-size:14px;
+}
+
+button{
+  background:#6d5efc;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:10px;
+  font-size:14px;
+  cursor:pointer;
+  margin-top:15px;
+}
+
+.resume-template{
+  background:white;
+  color:#111827;
+  border-radius:18px;
+  padding:40px;
+  margin-top:20px;
+}
+
+.resume-header{
+  border-bottom:2px solid #6d5efc;
+  padding-bottom:15px;
+  margin-bottom:20px;
+}
+
+.resume-name{
+  font-size:34px;
+  font-weight:700;
+}
+
+.resume-role{
+  color:#6b7280;
+  margin-top:6px;
+}
+
+.section{
+  margin-top:24px;
+}
+
+.section h2{
+  color:#6d5efc;
+  font-size:14px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:10px;
+}
+
+.skills{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.skill{
+  background:#eef2ff;
+  color:#4338ca;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+}
+
+li{
+  margin-bottom:8px;
+}
+
+select{
+  background:#0b1220;
+  color:white;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #374151;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+<h1>AI Resume Builder Pro</h1>
+
+<p>Create recruiter-level ATS resumes with downloadable PDF export.</p>
+
+<label>Choose Template</label>
+<br><br>
+
+<select id="template">
+  <option value="modern">Modern Professional</option>
+  <option value="minimal">Minimal ATS</option>
+  <option value="dark">Executive Dark</option>
+</select>
+
+<br><br>
+
+<label>Paste Resume</label>
+
+<textarea id="resumeInput">
+ARUN KONDA
+Application Support Engineer
+Python, Linux, SQL, ServiceNow, ITIL, .NET
+</textarea>
+
+<br>
+
+<label>Paste Job Description</label>
+
+<textarea id="jobInput">
+Looking for Application Support Engineer with SQL, Linux, ITIL, automation and enterprise troubleshooting.
+</textarea>
+
+<br>
+
+<button onclick="generateResume()">
+Generate Professional Resume
+</button>
+
+<button onclick="downloadPDF()">
+Download PDF
+</button>
+
+</div>
+
+<div id="resumePreview" class="resume-template">
+
+<div class="resume-header">
+<div class="resume-name">Arun Konda</div>
+<div class="resume-role">Application Support Engineer</div>
+</div>
+
+<div class="section">
+<h2>Professional Summary</h2>
+
+<p>
+Application Support Engineer experienced in enterprise support,
+Linux systems, SQL troubleshooting, automation, ITIL operations,
+and production support for high-availability applications.
+</p>
+</div>
+
+<div class="section">
+<h2>Core Skills</h2>
+
+<div class="skills">
+<div class="skill">Linux</div>
+<div class="skill">SQL</div>
+<div class="skill">Python</div>
+<div class="skill">ServiceNow</div>
+<div class="skill">ITIL</div>
+<div class="skill">.NET</div>
+</div>
+</div>
+
+<div class="section">
+<h2>Professional Experience</h2>
+
+<ul>
+<li>Resolved enterprise L2/L3 production incidents across distributed environments.</li>
+<li>Automated operational workflows using Python and Bash scripting.</li>
+<li>Improved SLA compliance through proactive monitoring and RCA processes.</li>
+<li>Collaborated with development teams to improve application reliability.</li>
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function generateResume(){
+
+  const resume =
+    document.getElementById('resumeInput').value;
+
+  const jd =
+    document.getElementById('jobInput').value;
+
+  const preview =
+    document.getElementById('resumePreview');
+
+  preview.innerHTML = `
+
+    <div class="resume-header">
+      <div class="resume-name">Arun Konda</div>
+      <div class="resume-role">
+        Senior Application Support Engineer
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Professional Summary</h2>
+
+      <p>
+      Enterprise Application Support Engineer with strong expertise
+      in Linux administration, SQL troubleshooting, automation,
+      ITIL operations, incident management, and enterprise support.
+      Proven experience supporting mission-critical applications
+      in high-availability environments.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>ATS Optimized Skills</h2>
+
+      <div class="skills">
+        <div class="skill">Linux</div>
+        <div class="skill">SQL</div>
+        <div class="skill">Python</div>
+        <div class="skill">ITIL</div>
+        <div class="skill">ServiceNow</div>
+        <div class="skill">Automation</div>
+        <div class="skill">Enterprise Support</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Professional Experience</h2>
+
+      <ul>
+        <li>
+        Reduced operational downtime through proactive troubleshooting
+        and incident resolution.
+        </li>
+
+        <li>
+        Managed L2/L3 enterprise support operations for mission-critical systems.
+        </li>
+
+        <li>
+        Automated manual workflows using Python scripts.
+        </li>
+
+        <li>
+        Improved application stability through root cause analysis.
+        </li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Target Job Keywords</h2>
+
+      <p>${jd}</p>
+    </div>
+
+  `;
+}
+
+function downloadPDF(){
+
+  const element =
+    document.getElementById('resumePreview');
+
+  const opt = {
+    margin:0.5,
+    filename:'Arun_Konda_Resume.pdf',
+    image:{type:'jpeg',quality:1},
+    html2canvas:{scale:2},
+    jsPDF:{
+      unit:'in',
+      format:'a4',
+      orientation:'portrait'
+    }
+  };
+
+  html2pdf().set(opt).from(element).save();
+}
+
+</script>
+
+</body>
+</html>
